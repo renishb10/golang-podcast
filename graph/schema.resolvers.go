@@ -10,6 +10,7 @@ import (
 	"github.com/renishb10/golang-podcast/graph/generated"
 	"github.com/renishb10/golang-podcast/graph/model"
 	"github.com/renishb10/golang-podcast/itunes"
+	"github.com/renishb10/golang-podcast/utils"
 )
 
 func (r *queryResolver) Search(ctx context.Context, term string) ([]*model.Podcast, error) {
@@ -53,7 +54,7 @@ func (r *queryResolver) Feed(ctx context.Context, feedURL string) ([]*model.Feed
 			Title:       item.Title,
 			SubTitle:    item.Subtitle,
 			Description: item.Description,
-			Image:       nil,
+			Image:       utils.CheckNullString(item.Image.Href),
 			Summary:     item.Summary,
 			Link:        item.Enclosure.URL,
 			Duration:    item.Duration,
