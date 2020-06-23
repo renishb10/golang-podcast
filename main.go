@@ -2,39 +2,28 @@ package main
 
 import (
 	"log"
+	"net/http"
+	"os"
 
-	"github.com/renishb10/golang-podcast/feeds"
-	"github.com/renishb10/golang-podcast/itunes"
+	"github.com/99designs/gqlgen/graphql/handler"
+	"github.com/99designs/gqlgen/graphql/playground"
+	"github.com/renishb10/golang-podcast/graph"
+	"github.com/renishb10/golang-podcast/graph/generated"
 )
 
+const defaultPort = "8080"
+
 func main() {
-	ias := itunes.NewItunesApiService()
-
-	res, err := ias.Search("Full Stack Radio")
-	if err != nil {
-		log.Fatalf("Error while Searching: %v", err)
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = defaultPort
 	}
 
-	for _, item := range res.Results {
-		log.Println("-------------------------------")
-		log.Printf("Artist: %s", item.ArtistName)
-		log.Printf("Podcast Name: %s", item.TrackName)
-		log.Printf("Feed URL: %s", item.FeedURL)
+	srv := handler.NewDefaultServer(generated.NewExecutableSchema(generated.Config{Resolvers: &graph.Resolver{}}))
 
-		feed, err := feeds.GetFeed(item.FeedURL)
-		if err != nil {
-			log.Fatalf("\tError fetching Feeds: %v", err)
-		}
+	http.Handle("/", playground.Handler("GraphQL playground", "/query"))
+	http.Handle("/query", srv)
 
-		for _, pod := range feed.Channel.Item {
-			log.Println("\t----------------------------")
-			log.Printf("\tTitle: %s", pod.Title)
-			log.Printf("\tDuration: %s", pod.Duration)
-			log.Printf("\tDescription: %s", pod.Description)
-			log.Printf("\tURL: %s", pod.Enclosure.URL)
-			log.Println("\t----------------------------")
-		}
-
-		log.Println("-------------------------------")
-	}
+	log.Printf("connect to http://localhost:%s/ for GraphQL playground", port)
+	log.Fatal(http.ListenAndServe(":"+port, nil))
 }
